@@ -179,6 +179,91 @@ namespace TelegramBot_Dan
                 }
             }
         }
+
+
+
+        //получение сообщений
+        private void GetMessages(Message message)
+        {
+            Console.WriteLine("Получено сообщение: " + message.Text + " от пользователя: " + message.Chat.Username);
+            long IdUser = message.Chat.Id;
+            string MessageUser = message.Text;
+            //SaveToDatabaseAsync(IdUser.ToString(), MessageUser, message.Chat.Username);
+            if (message.Text.Contains("/")) Command(message.Chat.Id, message.Text);
+            else if (message.Text.Equals("Удалить все задачи"))
+            {
+                Users User = Users.Find(x => x.IdUser == message.Chat.Id);
+                if (User == null) SendMessage(message.Chat.Id, 4);
+                else if (User.Events.Count == 0) SendMessage(User.IdUser, 4);
+                else
+                {
+                    User.Events = new List<Events>();
+                    SendMessage(User.IdUser, 6);
+                }
+            }
+
+            else
+            {
+                Users User = Users.Find(x => x.IdUser == message.Chat.Id);
+                if (User == null)
+                {
+                    User = new Users(message.Chat.Id);
+                    Users.Add(User);
+                }
+                //if (TryParseRepeatTask(MessageUser, out List<DayOfWeek> days, out TimeSpan repeatTime, out string repeatMessage))
+               // {
+                   // User.RepeatEvents.Add(new RepeatEvent(days, repeatTime, repeatMessage));
+                   // TelegramBotClient.SendMessage(message.Chat.Id, "Повторяющееся напоминание добавлено!");
+                   // return;
+               // }
+                string[] Info = message.Text.Split('\n');
+                if (Info.Length < 2)
+                {
+                    SendMessage(message.Chat.Id, 2);
+                    return;
+                }
+
+                DateTime Time;
+                if (CheckFormatDateTime(Info[0], out Time) == false)
+                {
+                    SendMessage(message.Chat.Id, 2);
+                    return;
+                }
+
+                if (Time < DateTime.Now) SendMessage(message.Chat.Id, 3);
+
+                User.Events.Add(new Events(Time, message.Text.Replace(Time.ToString("HH:mm dd.MM.yyyy") + "\n", "")));
+
+            }
+        }
+
+        private async Task HandleUpdateAsync(//обновление информации
+            ITelegramBotClient client,
+            Update update,
+            CancellationToken cancellationToken)
+        {
+            if (update.Type == UpdateType.Message) GetMessages(update.Message);
+
+            else if (update.Type == UpdateType.CallbackQuery)
+            {
+                CallbackQuery query = update.CallbackQuery;
+                Users User = Users.Find(x => x.IdUser == query.Message.Chat.Id);
+                Events Event = User.Events.Find(x => x.Message == query.Data);
+                User.Events.Remove(Event);
+                SendMessage(query.Message.Chat.Id, 5);
+
+              
+            }
+
+        }
+
+
+        //получение ошибок
+        private async Task HandleErroeAsync(ITelegramBotClient client, Exception exception, HandleErrorSource source, CancellationToken token)
+        {
+            Console.WriteLine("ОШИБКА: " + exception.Message);
+        }
+
     }
 }
 
