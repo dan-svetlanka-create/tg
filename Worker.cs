@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot_Dan.Classes;
-using Telegram.Bot.Args; // Для версии 22.5.1
+
 
 namespace TelegramBot_Dan
 {
@@ -17,6 +17,7 @@ namespace TelegramBot_Dan
 
         /// <summary> Клиент через который будет происходить взаимодействие с TelegramBotClient
         TelegramBotClient TelegramBotClient;
+
         //private readonly IServiceScopeFactory _scopeFactory;
         /// <summary> Список пользователей
         List<Users> Users = new List<Users>();
@@ -28,31 +29,35 @@ namespace TelegramBot_Dan
         List<string> Messages = new List<string>() 
         {
 
-            "Здравствуйте!" +
-            "\nРад приветствовать вас в Telegram-боте «Напоминатор»!" +
-            "\nНаш бот создан для того, чтобы напоминать вам о важных событиях и мероприятиях. С ним вы точно не пропустите ничего важного!" +
-            "\nНе забудьте добавить бота в список своих контактов и настроить уведомления. Тогда вы всегда будете в курсе событий!",
+           "Здравствуйте!" +
+    "\nРад приветствовать вас в Telegram-боте «Напоминатор»!" +
+    "\nНаш бот создан для того, чтобы напоминать вам о важных событиях и мероприятиях. С ним вы точно не пропустите ничего важного!" +
+    "\nНе забудьте добавить бота в список своих контактов и настроить уведомления. Тогда вы всегда будете в курсе событий!",
 
-            "Укажите дату и время напоминания в следующем формате" +
-            "\n<b>12:51 26.04.2025</b>" +
-            "\n<b>Напомни о том что я хотел сходить в магазин.</i>" ,
+    "Укажите дату и время напоминания в следующем формате" +
+    "\n<b>12:51 26.04.2025</b>" +
+    "\n<b>Напомни о том что я хотел сходить в магазин.</b>",
 
-            "Кажется, что-то не получилось." + 
-            "\nУкажите дату и время напоминания в следующем формате:" +
-            "\n</i><b>12:51 26.04.2025</b>" +
-            "\n<b>Напомни о том что я хотел сходить в магазин.</i>",//
+    "Кажется, что-то не получилось." +
+    "\nУкажите дату и время напоминания в следующем формате:" +
+    "\n<b>12:51 26.04.2025</b>" +
+    "\n<b>Напомни о том что я хотел сходить в магазин.</b>",
 
-            "",
-            "Задачи пользователя не найдены.",
-            "Событие удалено.",
-            "Все события удалены."
+    "",
+    "Задачи пользователя не найдены.",
+    "Событие удалено.",
+    "Все события удалены."
         };
 
         private readonly ILogger<Worker> _logger;
 
 
-        
- 
+        public Worker(ILogger<Worker> logger)
+        {
+            _logger = logger;
+        }
+
+
         /// <summary>
         /// Проверка корректности ввода даты и времени
         /// </summary>
@@ -231,7 +236,8 @@ namespace TelegramBot_Dan
             Update update,
             CancellationToken cancellationToken)
         {
-            if (update.Type == UpdateType.Message) GetMessages(update.Message);
+            if (update.Type == UpdateType.Message)
+                GetMessages(update.Message);
 
             else if (update.Type == UpdateType.CallbackQuery)
             {
@@ -285,7 +291,7 @@ namespace TelegramBot_Dan
 
                     // Удаляем отправленное событие из списка пользователя
                     User.Events.Remove(User.Events[i]);
-                    i--; // Уменьшаем счетчик, так как удалили элемент
+                    //i--; // Уменьшаем счетчик, так как удалили элемент
                 }
             }
         }

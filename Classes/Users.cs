@@ -9,18 +9,17 @@ namespace TelegramBot_Dan.Classes
 {
     public class Users
     {
-        /// <summary> Код пользователя
+        public int Id { get; set; }
         public long IdUser { get; set; }
-
-        /// <summary> События пользователя
         public List<Events> Events { get; set; }
-
-        /// <summary> Конструктор для класса
+       
         public Users(long idUser)
         {
-            IdUser = idUser; // запоминаем Id чата пользователя
-            Events = new List<Events>(); // инициализируем список событий
+            IdUser = idUser;
+            Events = new List<Events>();
+          
         }
+
     }
 }
 
