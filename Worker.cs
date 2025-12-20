@@ -113,6 +113,72 @@ namespace TelegramBot_Dan
         }
 
 
+
+        /// <summary>
+        /// Метод отправки сообщений
+        /// </summary>
+        /// <param name="chatId">Чат Id</param>
+        /// <param name="typeMessage">Тип сообщения</param>
+        public async void SendMessage(long chatId, int typeMessage)
+        {
+            // Если тип сообщения не равен 3
+            if (typeMessage != 3)
+            {
+                // Отправляем сообщение
+                await TelegramBotClient.SendMessage(chatId, Messages[typeMessage], ParseMode.Html, replyMarkup: GetButtons());
+            }
+            else if (typeMessage == 3)// если тип сообщения 3
+            {
+                // отправляем сообщение с ошибкой даты
+                await TelegramBotClient.SendMessage(chatId,
+                    $"Указанное вами время и дата не могут быть установлены, " +
+                    $"потому что сейчас уже : {DateTime.Now.ToString("HH.mm dd.MM.yyyy")}");
+            }
+        }
+
+
+
+        /// <summary>
+        /// Команды
+        /// </summary>
+        /// <param name="chatId">Код пользователя</param>
+        /// <param name="command">Команда</param>
+        public async void Command(long chatId, string command)
+        {
+            // если команда старт, отправляем 0 сообщение
+            if (command.ToLower() == "/start")
+                SendMessage(chatId, 0);
+            // если команда создание задачи, отправляем 1 сообщение
+            else if (command.ToLower() == "/create_task")
+                SendMessage(chatId, 1);
+            // если команда список задач
+            else if (command.ToLower() == "/list_tasks")
+            {
+                // получаем пользователя, у которого совпадает чат Id
+                Users User = Users.Find(x => x.IdUser == chatId);
+                // если пользователь не найден, отправляем 4 сообщение
+                if (User == null)
+                    SendMessage(chatId, 4);
+                // если количество уведомлений равно 0, отправляем 4 сообщение
+                else if (User.Events.Count == 0)
+                    SendMessage(chatId, 4);
+                // в противном случае
+                else
+                {
+                    // перебираем уведомления пользователя
+                    foreach (Events Event in User.Events)
+                    {
+                        // отправляем в чат
+                        await TelegramBotClient.SendMessage(
+                            chatId,
+                            $"Уведомить пользователя: {Event.Time.ToString("HH:mm dd.MM.yyyy")}" +
+                            $"\nСообщение: {Event.Message}",
+                            replyMarkup: DeleteEvent(Event.Message)
+                        );
+                    }
+                }
+            }
+        }
     }
 }
 
