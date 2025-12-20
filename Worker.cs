@@ -1,9 +1,11 @@
+using System.Threading;
 using Telegram.Bot;
-using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot_Dan.Classes;
+using Telegram.Bot.Args; // Для версии 22.5.1
 
 namespace TelegramBot_Dan
 {
@@ -48,22 +50,9 @@ namespace TelegramBot_Dan
 
         private readonly ILogger<Worker> _logger;
 
-        public Worker(ILogger<Worker> logger)
-        {
-            _logger = logger;
-        }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                if (_logger.IsEnabled(LogLevel.Information))
-                {
-                    _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                }
-                await Task.Delay(1000, stoppingToken);
-            }
-        }
+        
+ 
         /// <summary>
         /// Проверка корректности ввода даты и времени
         /// </summary>
@@ -259,10 +248,68 @@ namespace TelegramBot_Dan
 
 
         //получение ошибок
-        private async Task HandleErroeAsync(ITelegramBotClient client, Exception exception, HandleErrorSource source, CancellationToken token)
+        private async Task HandleErrorAsync(ITelegramBotClient client, Exception exception, HandleErrorSource source, CancellationToken token)
         {
             Console.WriteLine("ОШИБКА: " + exception.Message);
         }
+
+
+        /// <summary>
+        /// Метод для периодической проверки и отправки напоминаний
+        /// </summary>
+
+        public async void Tick(object obj)
+        {
+            // Получаем текущее время в формате "ЧЧ:мм дд.ММ.гггг"
+            // Это будет использоваться для сравнения с временем событий
+            string TimeNow = DateTime.Now.ToString("HH:mm dd.MM.yyyy");
+
+            // Перебираем всех пользователей в системе
+            foreach (Users User in Users)
+            {
+                // Перебираем все события текущего пользователя
+                // Используем for вместо foreach т.к. планируем удалять элементы
+                for (int i = 0; i < User.Events.Count; i++)
+                {
+                    // Сравниваем время события с текущим временем
+                    // Если время не совпадает – переходим к следующему событию (continue)
+                    if (User.Events[i].Time.ToString("HH:mm dd.MM.yyyy") != TimeNow)
+                        continue;
+
+                    // Время совпало – отправляем напоминание пользователю
+                    // Используем await для асинхронной отправки сообщения
+                    await TelegramBotClient.SendMessage(
+                        User.IdUser, // ID пользователя (чата) для отправки
+                        "Напоминание: " + User.Events[i].Message // Текст напоминания
+                    );
+
+                    // Удаляем отправленное событие из списка пользователя
+                    User.Events.Remove(User.Events[i]);
+                    i--; // Уменьшаем счетчик, так как удалили элемент
+                }
+            }
+        }
+
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            // Инициализируем телеграмм клиент, указывая токен
+            TelegramBotClient = new TelegramBotClient(Token);
+            // Запускаем прослушивание сообщений от пользователя
+            TelegramBotClient.StartReceiving(
+            HandleUpdateAsync, // указываем метод, получающий сообщения и callback
+            HandleErrorAsync, // указываем метод, обрабатывающий возникающие ошибки
+            null,
+            new CancellationTokenSource().Token // Указываем токен
+            );
+            // Создаём callback метод, срабатывающий на тиканье таймера
+            TimerCallback TimerCallback = new TimerCallback(Tick);
+            // Запускаем таймер, с переодичностью 1 минуту
+            Timer = new Timer(TimerCallback, 0, 0, 60 * 1000);
+        }
+
+
+
 
     }
 }
